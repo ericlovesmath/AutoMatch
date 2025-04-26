@@ -155,4 +155,8 @@
         color: #ffffff;
         background-color: #338833;
     }
+
+    button {
+      all: unset;
+    }
 </style>
