@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { sendMessage } from "./WebsocketStore";
     let chatMessage = $state<string>("");
 
     let {chat, send_message} = $props<{

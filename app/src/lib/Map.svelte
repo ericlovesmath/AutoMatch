@@ -10,9 +10,10 @@
     let selection_mode: Selection = $state("from");
     let subselection: SubSelection = "marker";
 
-    let { update_loc, selecting_locations } = $props<{
+    let { update_loc, selecting_locations, external_selections } = $props<{
         update_loc: (l: LocationInfo) => void;
         selecting_locations: boolean;
+        external_selections: LocationInfo[]
     }>();
 
     type Markers = {

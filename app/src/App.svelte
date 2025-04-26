@@ -21,6 +21,8 @@
     let contact: ContactInfo | null = null;
     let match: MatchInfo | null = null;
 
+    let external_locs: LocationInfo[] = [];
+
     function handleConsent() {
         sendMessage(ws, "consent", true as any);
     }
@@ -62,9 +64,14 @@
     let chat: string[] = [];
 
     let ws: WebSocket | null = null;
+    let disconnected = true;
 
     function initWebSocket(url: string) {
         ws = new WebSocket(url);
+
+        ws.onopen = () => {
+            disconnected = false;
+        }
 
         ws.onmessage = (e) => {
             const res: { type: string; msg: string } = JSON.parse(e.data);
@@ -94,14 +101,21 @@
         };
 
         ws.onerror = (err) => console.error("WebSocket error:", err);
-        ws.onclose = () => console.log("WebSocket connection closed");
+        ws.onclose = () => {
+            disconnected = true;
+        }
     }
 
     onMount(() => initWebSocket("ws://localhost:8080"));
 </script>
 
 <main style="display: flex; flex: row; height:100vh; width:100vw">
-    <Map {update_loc} selecting_locations={current_phase == "location"} />
+
+    {#if disconnected}
+        <div class="disconnected"></div>
+    {/if}
+
+    <Map {update_loc} selecting_locations={current_phase == "location"} external_selections={external_locs} />
 
     <!-- sidebar -->
     <div style="width: 30vw;">
@@ -114,3 +128,15 @@
         {/if}
     </div>
 </main>
+
+<style>
+.disconnected {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4000;
+    background-color: rgba(1, 1, 1, 0.3);
+}
+</style>
