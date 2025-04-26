@@ -1,21 +1,18 @@
 import { getDistance } from "geolib";
+import { ClientData } from "./types";
 
-// Define the type for the client data
-export interface ClientData {
-  name: string;
-  airport: string;
-  radius: number;
-  latitude: number;
-  longitude: number;
-}
-
-export function isMatch(data1 : ClientData, data2 : ClientData) {
-  // Distance converted to km
-  const dist = getDistance(
-    { latitude: data1.latitude, longitude: data1.longitude },
-    { latitude: data2.latitude, longitude: data2.longitude },
+export function isMatch(data1: ClientData, data2: ClientData): boolean {
+  const distFrom = getDistance(
+    { latitude: data1.from.latitude, longitude: data1.from.longitude },
+    { latitude: data2.from.latitude, longitude: data2.from.longitude },
+  );
+  const distTo = getDistance(
+    { latitude: data1.to.latitude, longitude: data1.to.longitude },
+    { latitude: data2.to.latitude, longitude: data2.to.longitude },
   );
 
-  return dist <= data1.radius + data2.radius &&
-         data1.airport == data2.airport;
+  return (
+    distFrom <= data1.from.radius + data2.from.radius &&
+    distTo <= data1.to.radius + data2.to.radius
+  );
 }
