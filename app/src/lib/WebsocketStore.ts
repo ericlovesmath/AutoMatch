@@ -40,7 +40,7 @@ export function initWebSocket(url: string) {
   ws.onclose = () => console.log("WebSocket connection closed");
 }
 
-export function sendMessage(type: MessageType, msg: string) {
+export function sendMessage(type: MessageType, msg: any) {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type, data: msg }));
   }

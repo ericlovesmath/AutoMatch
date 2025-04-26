@@ -89,7 +89,10 @@ wss.on("connection", (ws: WebSocket) => {
           const client = clients.find((client) => client.ws === ws);
           const other = clients.find((c) => c.ws === client?.match);
           if (client?.consent && other?.consent) {
+            ws.send(mkResChatMsg(message.data as string));
             other.ws.send(mkResChatMsg(message.data as string));
+          } else {
+            ws.send(mkResStatus("Chat failed to send (check consent?)"));
           }
           break;
         }
