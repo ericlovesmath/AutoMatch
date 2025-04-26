@@ -2,13 +2,18 @@
     import "leaflet/dist/leaflet.css";
     import L from "leaflet";
     import { onMount } from "svelte";
-    import { state, location_info } from "./WebsocketStore";
+    import { type LocationInfo } from "./WebsocketStore";
 
     let map: L.Map;
     type Selection = "from" | "to" | "submit";
     type SubSelection = "marker" | "radius";
-    let selection_mode: Selection = "from";
+    let selection_mode: Selection = $state("from");
     let subselection: SubSelection = "marker";
+
+    let { update_loc, selecting_locations } = $props<{
+        update_loc: (l: LocationInfo) => void;
+        selecting_locations: boolean;
+    }>();
 
     type Markers = {
         marker: {
@@ -102,46 +107,52 @@
 
     function submit() {
         if (!is_valid("from") || !is_valid("to")) {
-            alert("invalid from and to");
+            alert("invalid from or to");
         }
-        $location_info = {
+        update_loc({
             from: markers.marker.from!.getLatLng(),
             to: markers.marker.to!.getLatLng(),
             from_radius: markers.radius.from!.getRadius(),
             to_radius: markers.radius.to!.getRadius(),
-        };
-        $state = "info";
+        });
+        selecting_locations = false;
     }
 </script>
 
-<main style="flex: 0 1 auto; width: 100%; height: 100%;">
-    <div class="header">
-        <button
-            class="header-instr"
-            class:active={selection_mode === "from"}
-            on:click={activate_from}>From</button
-        >
-        <button
-            class="header-instr"
-            class:active={selection_mode === "to"}
-            on:click={activate_to}>To</button
-        >
-        <button
-            id="submit"
-            class="header-instr"
-            class:active={selection_mode === "submit"}
-            on:click={submit}>Submit</button
-        >
-    </div>
+<main style="flex-grow: 1; position: relative;">
     <div id="map"></div>
+    <div class="header">
+        {#if selecting_locations}
+            <button
+                class="header-instr"
+                class:active={selection_mode === "from"}
+                onclick={activate_from}>From</button
+            >
+            <button
+                class="header-instr"
+                class:active={selection_mode === "to"}
+                onclick={activate_to}>To</button
+            >
+            <button
+                id="submit"
+                class="header-instr"
+                class:active={selection_mode === "submit"}
+                onclick={submit}>Submit</button
+            >
+        {/if}
+    </div>
 </main>
 
 <style>
     .header {
+        position: relative;
+        top: 50px;
+        left: 0;
         display: flex;
         flex-direction: row;
-        gap: 20px;
+        gap: 50px;
         justify-content: center;
+        z-index: 400;
     }
 
     .header-instr {
@@ -153,6 +164,9 @@
     }
 
     #map {
+        position: absolute;
+        left: 0;
+        top: 0;
         width: 100%;
         height: 100%;
     }
@@ -168,5 +182,6 @@
 
     button {
         all: unset;
+        background-color: rgba(0.2, 0.2, 0.2, 0.8);
     }
 </style>
