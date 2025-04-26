@@ -7,24 +7,21 @@ npm install
 npm run dev
 ```
 
-Frontend UI (interactive map that shows general from and to locations)
-- map with OpenStreetMap
-
-
 ## Backend
-way to schedule / cancel through ui with info stored on the backend
-
-maybe websocket communication (definitely if it works in real-time)
-
-matching algorithm (based on geodata and times)
-
+```
+cd backend
+npm run build
+npm run serve
+```
 
 ## TODOs
 
-- [ ] Set up map viewer in frontend
-- [ ] Set up websockets in the frontend
-- [ ] Set up websockets in the backend
-- [ ] ...
+- [ ] add sidebar in frontend
+- [ ] clean up global state handling in frontend
+- [ ] add additional functionality to backend (and use in frontend)
+- [ ] better ui and visualizations
+- [ ] update backend to use leaflet?
+- [ ] schedule ahead?
 
 ## Not planned
 
