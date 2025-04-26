@@ -1,0 +1,25 @@
+body {
+    margin: 0;
+    background-color: #111111;
+    color: #ffffff;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+}
+
+.header-instr {
+    padding: 20px;
+}
+
+.active {
+    background-color: #333388;
+}
+
+#map {
+    width: 100%;
+    height: 80%;
+}
