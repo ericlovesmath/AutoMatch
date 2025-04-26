@@ -1,15 +1,44 @@
 import { writable } from "svelte/store";
+import L from "leaflet";
 
 export type MessageType = "register" | "consent" | "chat_message";
+export type StateType = "location" | "info" | "chat";
+export type LocationInfo = {
+    from: L.LatLng;
+    to: L.LatLng;
+    from_radius: number;
+    to_radius: number;
+};
+export type ContactInfo = {
+    name: string;
+    phone: string;
+};
 
 let ws: WebSocket | null = null;
 
 export const chat = writable<string[]>([]);
+export const state = writable<StateType>("location");
+export const location_info = writable<LocationInfo|null>(null);
+export const contact_info = writable<ContactInfo|null>(null);
+
+export function addMessageHandler(listener: (this: WebSocket, ev: any) => any){
+    ws?.addEventListener("message", listener);
+}
+
+export function submitUser(loc: LocationInfo, contact: ContactInfo){
+    sendMessage("register", {
+        name: contact.name,
+        airport: "LAX",
+        radius: loc.from_radius,
+        latitude: loc.from.lat,
+        longitude: loc.from.lng,
+    } as any)
+}
 
 export function initWebSocket(url: string) {
   ws = new WebSocket(url);
 
-  ws.onmessage = (e) => {
+  addMessageHandler((e) => {
     const res: { type: string, msg: string } = JSON.parse(e.data);
 
     switch (res.type) {
@@ -34,7 +63,7 @@ export function initWebSocket(url: string) {
       default:
         console.error("Unknown response type:", res.type);
     }
-  };
+  })
 
   ws.onerror = (err) => console.error("WebSocket error:", err);
   ws.onclose = () => console.log("WebSocket connection closed");

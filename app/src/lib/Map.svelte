@@ -2,6 +2,7 @@
     import "leaflet/dist/leaflet.css";
     import L from "leaflet";
     import { onMount } from "svelte";
+    import { state, location_info } from "./WebsocketStore";
 
     let map: L.Map;
     type Selection = "from" | "to" | "submit";
@@ -100,7 +101,16 @@
     }
 
     function submit() {
-        alert("submitting");
+        if (!is_valid("from") || !is_valid("to")) {
+            alert("invalid from and to");
+        }
+        $location_info = {
+            from: markers.marker.from!.getLatLng(),
+            to: markers.marker.to!.getLatLng(),
+            from_radius: markers.radius.from!.getRadius(),
+            to_radius: markers.radius.to!.getRadius(),
+        };
+        $state = "info";
     }
 </script>
 
@@ -157,6 +167,6 @@
     }
 
     button {
-      all: unset;
+        all: unset;
     }
 </style>
