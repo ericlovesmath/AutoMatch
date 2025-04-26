@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { ClientData, isMatch } from "./matching";
+import { isMatch } from "./matching";
+import { Message, ClientData, Response } from "./types";
 
 // NOTE FOR BRADY
 // - CHANGED API
@@ -9,22 +10,13 @@ import { ClientData, isMatch } from "./matching";
 //         - map_update ADD stream sent for users who connected before you when you register
 //     - Client can send { consent : false } to remove the user from both people's interfaces
 //     - Client can send info_update like register, but to change the user
+//     - ClientData doesn't take an Airport, but [from] and [to] regions
 
-export interface Message {
-  type: "register" | "consent" | "chat_message" | "info_update";
-  data: any;
-}
-
-export interface Response {
-  type: "status" | "consent" | "chat_start" | "chat_message" | "map_update" ;
-  msg: any;
-}
-
-const mkResStatus = (msg: string) => JSON.stringify({ type: "status", msg })
-const mkResConsent = (msg: string) => JSON.stringify({ type: "consent", msg })
-const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg })
-const mkResChatMsg = (msg: { name: string, msg: string }) => JSON.stringify({ type: "chat_message", msg })
-const mkResMapUpdate = (msg: { type: "add" | "remove" , data: ClientData }) => JSON.stringify({ type: "map_update", msg })
+const mkResStatus = (msg: string) => JSON.stringify({ type: "status", msg } as Response)
+const mkResConsent = (msg: string) => JSON.stringify({ type: "consent", msg } as Response)
+const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg } as Response)
+const mkResChatMsg = (msg: { name: string, msg: string }) => JSON.stringify({ type: "chat_message", msg } as Response)
+const mkResMapUpdate = (msg: { type: "add" | "remove" , data: ClientData }) => JSON.stringify({ type: "map_update", msg } as Response)
 
 // TODO: Database instead?
 const clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: boolean }[] = [];
@@ -32,27 +24,23 @@ const clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: b
 const wss = new WebSocketServer({ port: 8080 });
 
 function checkPair(ws: WebSocket) {
-  let client1 = null;
-  for (const client of clients) {
-    if (ws === client.ws) {
-      client1 = client;
+  const client1 = clients.find((client) => client.ws === ws);
+
+  if (client1) {
+    for (const client2 of clients) {
+      if (client1.ws !== client2.ws && isMatch(client1.data, client2.data)) {
+        console.log(`[PAIRING] Found match: ${client1.data.name}, ${client2.data.name}`);
+
+        client1.ws.send(mkResConsent(`Found match: ${client2.data.name}`));
+        client2.ws.send(mkResConsent(`Found match: ${client1.data.name}`));
+
+        client1.match = client2.ws;
+        client2.match = client1.ws;
+      }
     }
-  }
-
-  if (client1 == null) {
-    throw new Error("Client not found");
-  }
-
-  for (const client2 of clients) {
-    if (client1.ws !== client2.ws && isMatch(client1.data, client2.data)) {
-      console.log(`[PAIRING] Found match: ${client1.data.name}, ${client2.data.name}`);
-
-      client1.ws.send(mkResConsent(`Found match: ${client2.data.name}`));
-      client2.ws.send(mkResConsent(`Found match: ${client1.data.name}`));
-
-      client1.match = client2.ws;
-      client2.match = client1.ws;
-    }
+  } else {
+    console.log(`[PAIRING] Failed to find user`);
+    ws.send(mkResStatus("Update request failed, couldn't find user"));
   }
 }
 
