@@ -1,20 +1,30 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { ClientData, isMatch } from "./matching";
 
+// NOTE FOR BRADY
+// - CHANGED API
+//     - chat_message gets json { name: string, msg: string } instead of just msg now
+//     - map_update gets json { type: add/remove, data: ClientData }
+//         - Rejecting is treated the same as removing them from map (since you won't want to consider them anyways)
+//         - map_update ADD stream sent for users who connected before you when you register
+//     - Client can send { consent : false } to remove the user from both people's interfaces
+//     - Client can send info_update like register, but to change the user
+
 export interface Message {
-  type: "register" | "consent" | "chat_message";
+  type: "register" | "consent" | "chat_message" | "info_update";
   data: any;
 }
 
 export interface Response {
-  type: "status" | "consent" | "chat_start" | "chat_message";
-  msg: string;
+  type: "status" | "consent" | "chat_start" | "chat_message" | "map_update" ;
+  msg: any;
 }
 
 const mkResStatus = (msg: string) => JSON.stringify({ type: "status", msg })
 const mkResConsent = (msg: string) => JSON.stringify({ type: "consent", msg })
 const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg })
-const mkResChatMsg = (msg: string) => JSON.stringify({ type: "chat_message", msg })
+const mkResChatMsg = (msg: { name: string, msg: string }) => JSON.stringify({ type: "chat_message", msg })
+const mkResMapUpdate = (msg: { type: "add" | "remove" , data: ClientData }) => JSON.stringify({ type: "map_update", msg })
 
 // TODO: Database instead?
 const clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: boolean }[] = [];
@@ -52,13 +62,21 @@ wss.on("connection", (ws: WebSocket) => {
   ws.on("message", (raw: string) => {
     try {
       const message: Message = JSON.parse(raw);
-      switch (message.type as string) {
+      switch (message.type) {
         case "register": {
           const data = message.data as ClientData;
           console.log(`[REGISTER] Received Client Data: ${JSON.stringify(data)}`);
 
           clients.push({ ws, data });
           ws.send(mkResStatus("Registration Successful"));
+
+          for (const client of clients) {
+            if (client.ws !== ws) {
+              console.log(`[MAP] Sent ${data.name} info to ${client.data.name}`);
+              ws.send(mkResMapUpdate({ type: "add", data: client.data }));
+              client.ws.send(mkResMapUpdate({ type: "add", data: data }));
+            }
+          }
 
           checkPair(ws);
           break;
@@ -81,6 +99,17 @@ wss.on("connection", (ws: WebSocket) => {
             } else {
               client.ws.send(mkResStatus("Waiting for other user to consent"));
             }
+          } else if (client?.ws && consented) {
+            client.consent = false;
+            const other = clients.find((c) => c.ws === client.match);
+            if (other?.consent) {
+              console.log(`[CONSENT] Asked ${other.data.name} to remove ${client.data.name}`);
+              other.ws.send(mkResMapUpdate({ type: "remove", data: client.data }));
+              console.log(`[CONSENT] Asked ${client.data.name} to remove ${other.data.name}`);
+              client.ws.send(mkResMapUpdate({ type: "remove", data: other.data }));
+            } else {
+              client.ws.send(mkResStatus("Can't find opposing user to reject"));
+            }
           }
           break;
         }
@@ -91,11 +120,44 @@ wss.on("connection", (ws: WebSocket) => {
           if (client?.consent && other?.consent) {
             let msg = message.data as string;
             console.log(`[CHAT] Sent message from ${client.data.name} to ${other.data.name}: ${msg}`);
-            ws.send(mkResChatMsg(msg));
-            other.ws.send(mkResChatMsg(msg));
+            ws.send(mkResChatMsg({ name: client.data.name, msg }));
+            other.ws.send(mkResChatMsg({ name: client.data.name, msg }));
           } else {
             console.log(`[CHAT] Failed to send message`);
             ws.send(mkResStatus("Chat failed to send (check consent?)"));
+          }
+          break;
+        }
+
+        case "info_update": {
+          const client = clients.find((client) => client.ws === ws);
+          if (client) {
+            let data = message.data as ClientData;
+
+            for (const client of clients) {
+              if (client.ws !== ws) {
+                console.log(`[MAP] Asked ${data.name} to remove ${client.data.name}`);
+                client.ws.send(mkResMapUpdate({ type: "remove", data: data }));
+              }
+            }
+
+            client.ws = ws;
+            client.data = data;
+            client.match = undefined;
+            client.consent = undefined;
+            console.log(`[UPDATE] Updated info of ${client.data.name}: ${data}`);
+            ws.send(mkResStatus("Updated user information"));
+
+            for (const client of clients) {
+              if (client.ws !== ws) {
+                console.log(`[MAP] Asked ${data.name} to add ${client.data.name}`);
+                client.ws.send(mkResMapUpdate({ type: "add", data: data }));
+              }
+            }
+
+          } else {
+            console.log(`[UPDATE] Failed to find user`);
+            ws.send(mkResStatus("Update request failed, couldn't find user"));
           }
           break;
         }
