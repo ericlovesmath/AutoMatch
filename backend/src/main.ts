@@ -16,12 +16,12 @@ const mkResConsent = (msg: string) => JSON.stringify({ type: "consent", msg })
 const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg })
 const mkResChatMsg = (msg: string) => JSON.stringify({ type: "chat_message", msg })
 
+// TODO: Database instead?
 const clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: boolean }[] = [];
 
 const wss = new WebSocketServer({ port: 8080 });
 
 function checkPair(ws: WebSocket) {
-  console.log("PAIRING")
   let client1 = null;
   for (const client of clients) {
     if (ws === client.ws) {
@@ -35,7 +35,7 @@ function checkPair(ws: WebSocket) {
 
   for (const client2 of clients) {
     if (client1.ws !== client2.ws && isMatch(client1.data, client2.data)) {
-      console.log(`Found match: ${client1.data.name} and ${client2.data.name}`);
+      console.log(`[PAIRING] Found match: ${client1.data.name}, ${client2.data.name}`);
 
       client1.ws.send(mkResConsent(`Found match: ${client2.data.name}`));
       client2.ws.send(mkResConsent(`Found match: ${client1.data.name}`));
@@ -47,18 +47,15 @@ function checkPair(ws: WebSocket) {
 }
 
 wss.on("connection", (ws: WebSocket) => {
-  console.log("Client connected");
+  console.log("[CONNECTION] Client Connected");
 
   ws.on("message", (raw: string) => {
     try {
-      // TODO Parse the received data and validate
       const message: Message = JSON.parse(raw);
-      console.log("Recieved message of type: ", message.type);
-
       switch (message.type as string) {
         case "register": {
           const data = message.data as ClientData;
-          console.log(`Received Client Data: ${JSON.stringify(data)}`);
+          console.log(`[REGISTER] Received Client Data: ${JSON.stringify(data)}`);
 
           clients.push({ ws, data });
           ws.send(mkResStatus("Registration Successful"));
@@ -72,10 +69,13 @@ wss.on("connection", (ws: WebSocket) => {
 
           const client = clients.find((client) => client.ws === ws);
 
+          console.log(`[CONSENT] Received consent from: ${client?.data.name}`);
+
           if (client?.ws && consented) {
             client.consent = true;
             const other = clients.find((c) => c.ws === client.match);
             if (other?.consent) {
+              console.log(`[CONSENT] Pairing: ${client.data.name}, ${other.data.name}`);
               client.ws.send(mkResChat("Connecting..."));
               other.ws.send(mkResChat("Connecting..."));
             } else {
@@ -89,27 +89,30 @@ wss.on("connection", (ws: WebSocket) => {
           const client = clients.find((client) => client.ws === ws);
           const other = clients.find((c) => c.ws === client?.match);
           if (client?.consent && other?.consent) {
-            ws.send(mkResChatMsg(message.data as string));
-            other.ws.send(mkResChatMsg(message.data as string));
+            let msg = message.data as string;
+            console.log(`[CHAT] Sent message from ${client.data.name} to ${other.data.name}: ${msg}`);
+            ws.send(mkResChatMsg(msg));
+            other.ws.send(mkResChatMsg(msg));
           } else {
+            console.log(`[CHAT] Failed to send message`);
             ws.send(mkResStatus("Chat failed to send (check consent?)"));
           }
           break;
         }
 
         default:
-          console.log(`Unexpected Message Type ${message.type}`);
+          console.log(`[ERROR] Unexpected Message Type: ${message.type}`);
           ws.send(mkResStatus("Unknown Message Type"));
           break;
       }
 
     } catch (error) {
-      console.error("Error parsing client data:", error);
+      console.log(`[ERROR] Failed to parse client data: ${error}`);
       ws.send(mkResStatus("Invalid data format, server requests a JSON"));
     }
   });
 
   ws.on("close", () => {
-    console.log("Client disconnected");
+    console.log("[DISCONNECTION] Client disconnected");
   });
 });
