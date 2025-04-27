@@ -8,14 +8,16 @@ export type LocationInfo = {
     from_radius: number;
     to_radius: number;
 };
+
 export type ContactInfo = {
     name: string;
-    phone: string;
+    info: string;
 };
 
 export function submitUser(ws: WebSocket | null, loc: LocationInfo, contact: ContactInfo) {
     let data = {
         name: contact.name,
+        info: contact.info,
         from: {
             latitude: loc.from.lat,
             longitude: loc.from.lng,

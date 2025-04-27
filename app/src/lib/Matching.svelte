@@ -12,7 +12,13 @@
 
   <div id="match-container">
     {#if matched}
-      <p>Found match!</p>
+      <p>
+          Found match!
+          <br><br>
+          <strong>Name:</strong> {matched.name}
+          <br>
+          <strong>Description:</strong> {matched.info}
+      </p>
       <div class="button-group">
         <button class="accept-btn" onclick={() => send_consent(true)}>Send Consent</button>
         <button class="reject-btn" onclick={() => send_consent(false)}>Reject Consent</button>
