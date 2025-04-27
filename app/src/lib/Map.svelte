@@ -5,7 +5,7 @@
     import { type LocationInfo } from "./WebsocketStore";
 
     let map: L.Map;
-    type Selection = "from" | "to" | "submit";
+    type Selection = "from" | "to" | "none";
     type SubSelection = "marker" | "radius";
     let selection_mode: Selection = $state("from");
     let subselection: SubSelection = "marker";
@@ -13,7 +13,7 @@
     let { update_loc, selecting_locations, external_selections } = $props<{
         update_loc: (l: LocationInfo) => void;
         selecting_locations: boolean;
-        external_selections: LocationInfo[]
+        external_selections: any;
     }>();
 
     type Markers = {
@@ -40,7 +40,7 @@
 
         map.on("click", (e) => {
             const coord = e.latlng;
-            if (selection_mode === "submit") return;
+            if (selection_mode === "none") return;
 
             if (subselection === "marker") {
                 clear(selection_mode);
@@ -61,14 +61,20 @@
                 } else if (!is_valid("to")) {
                     activate_to();
                 } else {
-                    selection_mode = "submit";
+                    selection_mode = "none";
+                    update_loc({
+                        from: markers.marker.from!.getLatLng(),
+                        to: markers.marker.to!.getLatLng(),
+                        from_radius: markers.radius.from!.getRadius(),
+                        to_radius: markers.radius.to!.getRadius(),
+                    });
                 }
             }
         });
 
         map.addEventListener("mousemove", (e) => {
             const coord = e.latlng;
-            if (selection_mode === "submit") return;
+            if (selection_mode === "none") return;
 
             if (subselection === "radius") {
                 const r = L.latLng(coord.lat, coord.lng).distanceTo(
@@ -106,18 +112,34 @@
         clear("to");
     }
 
-    function submit() {
-        if (!is_valid("from") || !is_valid("to")) {
-            alert("invalid from or to");
+    let other_markers: L.Circle[] = [];
+    $effect(() => {
+        console.log("redrawing");
+
+        for (let m of other_markers) {
+            map.removeLayer(m);
         }
-        update_loc({
-            from: markers.marker.from!.getLatLng(),
-            to: markers.marker.to!.getLatLng(),
-            from_radius: markers.radius.from!.getRadius(),
-            to_radius: markers.radius.to!.getRadius(),
-        });
-        selecting_locations = false;
-    }
+        other_markers = [];
+
+        for (let key in external_selections) {
+            let l: LocationInfo = external_selections[key];
+            other_markers.push(
+                L.circle([l.from.lat, l.from.lng], {
+                    radius: l.from_radius,
+                    stroke: false,
+                    color: "green"
+                }).addTo(map),
+            );
+            other_markers.push(
+                L.circle([l.to.lat, l.to.lng], {
+                    radius: l.to_radius,
+                    stroke: false,
+                    color: "green"
+
+                }).addTo(map),
+            );
+        }
+    });
 </script>
 
 <main style="flex-grow: 1; position: relative;">
@@ -133,12 +155,6 @@
                 class="header-instr"
                 class:active={selection_mode === "to"}
                 onclick={activate_to}>To</button
-            >
-            <button
-                id="submit"
-                class="header-instr"
-                class:active={selection_mode === "submit"}
-                onclick={submit}>Submit</button
             >
         {/if}
     </div>
@@ -170,15 +186,6 @@
         top: 0;
         width: 100%;
         height: 100%;
-    }
-
-    #submit {
-        color: #777777;
-    }
-
-    #submit.active {
-        color: #ffffff;
-        background-color: #338833;
     }
 
     button {

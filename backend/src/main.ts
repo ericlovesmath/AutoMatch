@@ -1,25 +1,25 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { isMatch } from "./matching";
-import { Message, ClientData, Response } from "./types";
+import { Message, ClientData, Response } from "../../shared/types";
 
 // NOTE FOR BRADY
 // - CHANGED API
-//     - chat_message gets json { name: string, msg: string } instead of just msg now
-//     - map_update gets json { type: add/remove, data: ClientData }
-//         - Rejecting is treated the same as removing them from map (since you won't want to consider them anyways)
-//         - map_update ADD stream sent for users who connected before you when you register
-//     - Client can send { consent : false } to remove the user from both people's interfaces
-//     - Client can send info_update like register, but to change the user
-//     - ClientData doesn't take an Airport, but [from] and [to] regions
+//   - chat_message gets json { name: string, msg: string } instead of just msg now
+//   - map_update gets json { type: add/remove, data: ClientData }
+//     - Rejecting is treated the same as removing them from map (since you won't want to consider them anyways)
+//     - map_update ADD stream sent for users who connected before you when you register
+//   - Client can send { consent : false } to remove the user from both people's interfaces
+//   - Client can send info_update like register, but to change the user
+//   - ClientData doesn't take an Airport, but [from] and [to] regions
 
-const mkResStatus = (msg: string) => JSON.stringify({ type: "status", msg } as Response)
-const mkResConsent = (msg: string) => JSON.stringify({ type: "consent", msg } as Response)
-const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg } as Response)
-const mkResChatMsg = (msg: { name: string, msg: string }) => JSON.stringify({ type: "chat_message", msg } as Response)
-const mkResMapUpdate = (msg: { type: "add" | "remove" , data: ClientData }) => JSON.stringify({ type: "map_update", msg } as Response)
+const mkResStatus = (msg: string) => JSON.stringify({ type: "status", msg } as Response);
+const mkResConsent = (msg: string) => JSON.stringify({ type: "consent", msg } as Response);
+const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg } as Response);
+const mkResChatMsg = (msg: { name: string, msg: string; }) => JSON.stringify({ type: "chat_message", msg } as Response);
+const mkResMapUpdate = (msg: { type: "add" | "remove", data: ClientData; }) => JSON.stringify({ type: "map_update", msg } as Response);
 
 // TODO: Database instead?
-const clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: boolean }[] = [];
+const clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: boolean; }[] = [];
 
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -47,24 +47,29 @@ function checkPair(ws: WebSocket) {
 wss.on("connection", (ws: WebSocket) => {
   console.log("[CONNECTION] Client Connected");
 
+  for (const client of clients) {
+    console.log(`[MAP] Sent ${client.data.name} info to new connection`);
+    ws.send(mkResMapUpdate({ type: "add", data: client.data }));
+  }
+
   ws.on("message", (raw: string) => {
     try {
       const message: Message = JSON.parse(raw);
       switch (message.type) {
         case "register": {
+          
+          // TODO: make sure ws is not already in the client
+
           const data = message.data as ClientData;
           console.log(`[REGISTER] Received Client Data: ${JSON.stringify(data)}`);
 
+          for (const client of clients) {
+            console.log(`[MAP] Sent ${data.name} info to ${client.data.name}`);
+            client.ws.send(mkResMapUpdate({ type: "add", data: data }));
+          }
+
           clients.push({ ws, data });
           ws.send(mkResStatus("Registration Successful"));
-
-          for (const client of clients) {
-            if (client.ws !== ws) {
-              console.log(`[MAP] Sent ${data.name} info to ${client.data.name}`);
-              ws.send(mkResMapUpdate({ type: "add", data: client.data }));
-              client.ws.send(mkResMapUpdate({ type: "add", data: data }));
-            }
-          }
 
           checkPair(ws);
           break;
@@ -87,7 +92,7 @@ wss.on("connection", (ws: WebSocket) => {
             } else {
               client.ws.send(mkResStatus("Waiting for other user to consent"));
             }
-          } else if (client?.ws && consented) {
+          } else if (client?.ws && !consented) {
             client.consent = false;
             const other = clients.find((c) => c.ws === client.match);
             if (other?.consent) {
@@ -163,6 +168,7 @@ wss.on("connection", (ws: WebSocket) => {
   });
 
   ws.on("close", () => {
+    // TODO: remove ws from clients
     console.log("[DISCONNECTION] Client disconnected");
   });
 });

@@ -1,16 +1,15 @@
 <script lang="ts">
     let chatMessage = $state<string>("");
 
-    let {chat, send_message} = $props<{
-    chat: string[];
-    send_message: (msg: string) => void
+    let { chat, send_message } = $props<{
+        chat: string[];
+        send_message: (msg: string) => void;
     }>();
 
     function sendChatMessage() {
         send_message(chatMessage.trim());
         chatMessage = "";
     }
-
 </script>
 
 <main>
@@ -29,4 +28,5 @@
             />
             <button onclick={sendChatMessage}>Send</button>
         </div>
+    </div>
 </main>
