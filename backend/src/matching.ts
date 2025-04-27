@@ -1,5 +1,5 @@
 import { getDistance } from "geolib";
-import { ClientData } from "./types";
+import { ClientData } from "../../shared/types";
 
 export function isMatch(data1: ClientData, data2: ClientData): boolean {
   const distFrom = getDistance(
