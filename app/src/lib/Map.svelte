@@ -18,6 +18,10 @@
     external_selections: any;
   }>();
 
+  export function get_map() {
+    return map;
+  }
+
   type Markers = {
     marker: {
       from: L.Marker | null;
@@ -34,6 +38,16 @@
     radius: { from: null, to: null },
   };
 
+  var greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+
   onMount(() => {
     map = L.map("map").setView([34.14051944496899, -118.1231997613347], 40);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -41,10 +55,11 @@
     }).addTo(map);
 
     L.Control.geocoder({
-          defaultMarkGeocode: false, // Prevent automatic marker placement
-          position: "bottomright",
-          collapsed: false,
-      }).on("markgeocode", (e: any) => {
+      defaultMarkGeocode: false, // Prevent automatic marker placement
+      position: "bottomright",
+      collapsed: false,
+    })
+      .on("markgeocode", (e: any) => {
         const bbox = e.geocode.bbox;
         const poly = L.polygon([
           [bbox.getSouthEast().lat, bbox.getSouthEast().lng],
@@ -53,12 +68,8 @@
           [bbox.getSouthWest().lat, bbox.getSouthWest().lng],
         ]);
         map.fitBounds(poly.getBounds()); // Zoom to the location
-      }).addTo(map);
-
-    // L.Control.geocoder({
-    //       defaultMarkGeocode: false, // Prevent automatic marker placement
-    //       position: "bottomright",
-    //   }).addTo(map);
+      })
+      .addTo(map);
 
     map.on("click", (e) => {
       const coord = e.latlng;
@@ -66,9 +77,7 @@
 
       if (subselection === "marker") {
         clear(selection_mode);
-        markers.marker[selection_mode] = L.marker([coord.lat, coord.lng]).addTo(
-          map,
-        );
+        markers.marker[selection_mode] = L.marker([coord.lat, coord.lng], selection_mode == "from" ? {icon:greenIcon} : {}).addTo(map);
         markers.radius[selection_mode] = L.circle([coord.lat, coord.lng], {
           radius: 0,
           color: selection_mode === "from" ? "var(--green)" : "var(--blue)",
@@ -165,7 +174,7 @@
   <div id="map"></div>
   <div class="header">
     <button
-      style:flex={selection_mode == "from" ? "3" : "1"}
+      style:flex={selection_mode == "from" ? "4" : "1"}
       class="from"
       onclick={activate_from}
       disabled={!selecting_locations}
@@ -179,7 +188,7 @@
       {/if}
     </button>
     <button
-      style:flex={selection_mode == "to" ? "3" : "1"}
+      style:flex={selection_mode == "to" ? "4" : "1"}
       class="to"
       onclick={activate_to}
       disabled={!selecting_locations}
@@ -228,6 +237,7 @@
     transition: flex 0.3s;
     overflow-x: hidden;
     white-space: nowrap;
+    cursor: pointer;
   }
 
   button.from {

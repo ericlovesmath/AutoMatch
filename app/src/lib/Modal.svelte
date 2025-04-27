@@ -19,8 +19,8 @@
 <style>
     .info-button {
         position: fixed;
-        bottom: 10px;
-        left: 10px;
+        bottom: 15px;
+        left: 15px;
         padding: 10px 15px;
         background-color: #007bff;
         color: white;

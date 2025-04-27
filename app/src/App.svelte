@@ -23,6 +23,8 @@
     let waiting_for_other = false;
     let chat_started = false;
 
+    let map_component : Map;
+
     // object mapping strings to LocationInfo
     let external_locs: any = [];
 
@@ -54,6 +56,10 @@
         // if we have all of the info and are still in
         // the info phase, register user
         if (current_phase == "info") {
+            map_component.get_map().fitBounds([
+                [locs.from.lat, locs.from.lng],
+                [locs.to.lat, locs.to.lng]
+            ]);
             submitUser(ws, locs, contact);
         }
 
@@ -164,11 +170,12 @@
         {update_loc}
         selecting_locations={current_phase == "info"}
         external_selections={external_locs}
+        bind:this={map_component}
     />
     <Modal />
 
     <!-- sidebar -->
-    <div class="sidebar" style="width: 30vw;">
+    <div class="sidebar">
         <div id="logoContainer">
             <span class="logo-icon">🚗</span>
             <h1 class="logo-text">AutoMatch</h1>
@@ -210,9 +217,7 @@
     .sidebar {
         padding: 1rem;
         width: 30vw;
-        height: 100vh;
         background-color: #282c32;
-        border-right: 1px solid #ddd;
         box-shadow: 10px 0 5px rgba(0, 0, 0, 0.2);
         display: flex;
         flex-direction: column;
