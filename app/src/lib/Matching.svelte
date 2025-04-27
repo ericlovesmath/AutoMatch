@@ -1,3 +1,5 @@
+<!-- Waiting for matches and accepting/rejecting -->
+
 <script lang="ts">
     import type { ClientData } from "../../../shared/types";
 

@@ -1,12 +1,13 @@
+<!-- Map display and interactivity -->
+
 <script lang="ts">
     import "leaflet/dist/leaflet.css";
-    import L, { marker } from "leaflet";
+    import L from "leaflet";
     import "leaflet-control-geocoder";
     import "leaflet-control-geocoder/dist/Control.Geocoder.css";
     import { onMount } from "svelte";
-    import { type LocationInfo } from "./WebsocketStore";
+    import { type LocationInfo } from "./websocket_utils";
     import type { Path } from "../../../shared/types";
-    import Matching from "./Matching.svelte";
 
     let map: L.Map;
     let marker_layer: L.LayerGroup;
@@ -21,6 +22,7 @@
         external_selections: any;
     }>();
 
+    // map utils which can be used externally
     export function zoom_to_points(pts: L.LatLngTuple[]) {
         map.fitBounds(pts);
     }
@@ -39,6 +41,7 @@
         zoom_to_points([from, to]);
     }
 
+    // storage of markers on the map
     type Markers = {
         marker: {
             from: L.Marker | null;
@@ -67,13 +70,16 @@
     });
 
     onMount(() => {
+        // create map
         map = L.map("map").setView([34.14051944496899, -118.1231997613347], 40);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "&copy; OpenStreetMap contributors",
         }).addTo(map);
 
+        // create layer to hold markers
         marker_layer = L.layerGroup().addTo(map);
 
+        // search bar
         L.Control.geocoder({
             defaultMarkGeocode: false, // Prevent automatic marker placement
             position: "bottomright",
@@ -91,6 +97,7 @@
             })
             .addTo(map);
 
+        // selecting locations and ranges
         map.on("click", (e) => {
             const coord = e.latlng;
             if (selection_mode === "none") return;
@@ -130,6 +137,7 @@
             }
         });
 
+        // selecting ranges
         map.addEventListener("mousemove", (e) => {
             const coord = e.latlng;
             if (selection_mode === "none") return;
@@ -143,6 +151,7 @@
         });
     });
 
+    // remove markers for a certain mode
     function clear(mode: "from" | "to") {
         if (markers.marker[mode] !== null) {
             map.removeLayer(markers.marker[mode]!);
@@ -154,22 +163,26 @@
         }
     }
 
+    // check if marker and radius are set
     function is_valid(mode: "from" | "to") {
         return markers.marker[mode] !== null && markers.radius[mode] !== null;
     }
 
+    // start selecting the from location
     function activate_from() {
         selection_mode = "from";
         subselection = "marker";
         clear("from");
     }
 
+    // start selecting the to location
     function activate_to() {
         selection_mode = "to";
         subselection = "marker";
         clear("to");
     }
 
+    // draw markers from other users
     let other_markers: L.Circle[] = [];
     $effect(() => {
         for (let m of other_markers) {

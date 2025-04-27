@@ -1,3 +1,5 @@
+<!-- Chat between users -->
+
 <script lang="ts">
     let chatMessage = $state<string>("");
 

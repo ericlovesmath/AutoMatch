@@ -1,14 +1,11 @@
+<!-- Control flow and WebSocket handling -->
+
 <script lang="ts">
     import Map from "./lib/Map.svelte";
     import Modal from "./lib/Modal.svelte";
     import Info from "./lib/Info.svelte";
     import Chat from "./lib/Chat.svelte";
-    import {
-        type LocationInfo,
-        type ContactInfo,
-        sendMessage,
-        submitUser,
-    } from "./lib/WebsocketStore";
+    import { sendMessage, submitUser } from "./lib/websocket_utils";
     import { onMount } from "svelte";
     import Matching from "./lib/Matching.svelte";
     import L from "leaflet";
@@ -17,21 +14,27 @@
         type Path,
         type Response,
     } from "../../shared/types";
+    import {
+        type Phase,
+        type LocationInfo,
+        type ContactInfo,
+    } from "./lib/types";
 
-    type Phase = "info" | "matching" | "chat";
+    // state management
     let current_phase: Phase = "info";
-
     let locs: LocationInfo | null = null;
     let contact: ContactInfo | null = null;
     let match: ClientData | null = null;
     let waiting_for_other = false;
     let chat_started = false;
+    let external_locs: any = {}; // object mapping strings to LocationInfo
+    let chat: string[] = [];
 
+    // map reference
     let map_component: Map;
 
-    // object mapping strings to LocationInfo
-    let external_locs: any = [];
 
+    // updating states
     function update_loc(l: LocationInfo | null) {
         locs = l;
         next_phase();
@@ -39,7 +42,7 @@
 
     function update_info(c: ContactInfo | null) {
         // info section has submission for both map and info,
-        // so don't let it press until all info is there
+        // so don't let it submit until all info is there
         if (locs !== null) {
             contact = c;
             next_phase();
@@ -76,6 +79,7 @@
         current_phase = "chat";
     }
 
+    // send with websockets
     function send_msg(msg: string) {
         sendMessage(ws, "chat_message", msg);
     }
@@ -90,11 +94,10 @@
         waiting_for_other = false;
     }
 
-    let chat: string[] = [];
-
     let ws: WebSocket | null = null;
     let disconnected = true;
 
+    // starting a websocket and setting up all handlers
     function initWebSocket(url: string) {
         ws = new WebSocket(url);
 
@@ -166,6 +169,7 @@
         };
     }
 
+    // start websocket when the component mounts
     onMount(() => initWebSocket("ws://localhost:8080"));
 </script>
 

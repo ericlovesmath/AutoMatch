@@ -1,3 +1,5 @@
+<!-- "About" modal -->
+
 <script>
     let showInfo = false;
 </script>

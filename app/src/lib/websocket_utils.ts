@@ -1,19 +1,19 @@
-import L from "leaflet";
 
-export type MessageType = "register" | "consent" | "chat_message";
-export type StateType = "location" | "info" | "chat";
-export type LocationInfo = {
+type MessageType = "register" | "consent" | "chat_message";
+type LocationInfo = {
     from: L.LatLng;
     to: L.LatLng;
     from_radius: number;
     to_radius: number;
 };
 
-export type ContactInfo = {
+type ContactInfo = {
     name: string;
     info: string;
 };
 
+
+// register user data with the server
 export function submitUser(ws: WebSocket | null, loc: LocationInfo, contact: ContactInfo) {
     let data = {
         name: contact.name,
@@ -32,16 +32,9 @@ export function submitUser(ws: WebSocket | null, loc: LocationInfo, contact: Con
     sendMessage(ws, "register", data);
 }
 
+// send any message to the server
 export function sendMessage(ws: WebSocket | null, type: MessageType, msg: any) {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type, data: msg }));
     }
 }
-
-export function closeWebSocket(ws: WebSocket | null) {
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
-}
-
