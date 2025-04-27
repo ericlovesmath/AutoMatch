@@ -63,6 +63,7 @@ wss.on("connection", (ws: WebSocket) => {
           const data = message.data as ClientData;
           console.log(`[REGISTER] Received Client Data: ${JSON.stringify(data)}`);
 
+          // TODO: make list of registered people
           for (const client of clients) {
             console.log(`[MAP] Sent ${data.name} info to ${client.data.name}`);
             client.ws.send(mkResMapUpdate({ type: "add", data: data }));
