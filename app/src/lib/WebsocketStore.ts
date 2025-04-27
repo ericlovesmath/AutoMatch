@@ -16,10 +16,8 @@ export type ContactInfo = {
 export function submitUser(ws: WebSocket|null, loc: LocationInfo, contact: ContactInfo) {
     sendMessage(ws, "register", {
         name: contact.name,
-        airport: "LAX",
-        radius: loc.from_radius,
-        latitude: loc.from.lat,
-        longitude: loc.from.lng,
+        from: { latitude: loc.from.lat, longitude: loc.from.lng, radius: loc.from_radius },
+        to: { latitude: loc.to.lat, longitude: loc.to.lng, radius: loc.to_radius },
     } as any);
 }
 

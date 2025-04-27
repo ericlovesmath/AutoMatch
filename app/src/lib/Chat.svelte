@@ -2,8 +2,8 @@
     let chatMessage = $state<string>("");
 
     let {chat, send_message} = $props<{
-    chat: string[];
-    send_message: (msg: string) => void
+        chat: string[];
+        send_message: (msg: string) => void
     }>();
 
     function sendChatMessage() {
@@ -17,7 +17,7 @@
     <div id="chatContainer">
         <h2>Chat</h2>
         <div id="chatMessages">
-            {#each $chat as msg}
+            {#each chat as msg}
                 <div>{msg}</div>
             {/each}
         </div>
