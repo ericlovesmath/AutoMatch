@@ -1,7 +1,17 @@
+:root {
+  --green: #28a745;
+  --blue: #007bff;
+  --dark-green: #218838;
+  --dark-blue: #0056b3;
+  --text: #ffffff;
+  --subtext: #bbbbbb;
+  --background: #111111;
+}
+
 body {
   margin: 0;
-  background-color: #111111;
-  color: #ffffff;
+  background-color: var(--background);
+  color: var(--text);
 }
 
 html {

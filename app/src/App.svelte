@@ -126,8 +126,10 @@
                             from_radius: from.radius,
                             to_radius: to.radius,
                         };
+                        external_locs = { ...external_locs };
                     } else if (type == "remove") {
                         delete external_locs[name];
+                        external_locs = { ...external_locs };
                     } else {
                         alert("unknown map_update action " + type);
                     }

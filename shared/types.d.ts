@@ -1,5 +1,5 @@
 export interface Message {
-  type: "register" | "consent" | "chat_message" | "info_update";
+  type: "register" | "consent" | "chat_message" | "unregister";
   data: any;
 }
 
