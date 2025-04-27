@@ -113,7 +113,11 @@
                     console.log(res.msg);
 
                     // Rejection Section
-                    if (current_phase == "matching" && type == "remove" && match?.name == data.name) {
+                    if (
+                        current_phase == "matching" &&
+                        type == "remove" &&
+                        match?.name == data.name
+                    ) {
                         set_matched(null);
                     }
 
@@ -163,17 +167,34 @@
 
     <!-- sidebar -->
     <div class="sidebar" style="width: 30vw;">
+        <div id="logoContainer">
+            <span class="logo-icon">🚗</span>
+            <h1 class="logo-text">AutoMatch</h1>
+        </div>
         {#if current_phase == "info"}
             <Info update={update_info} />
         {:else if current_phase == "matching"}
-            <Matching matched={match} send_consent={send_consent} />
+            <Matching matched={match} {send_consent} />
         {:else if current_phase == "chat"}
             <Chat {chat} send_message={send_msg} />
         {/if}
+
+        <div id="footer">
+            <p>
+                Made with ❤️ by
+                <a href="https://bradybhalla.github.io/">Brady Bhalla</a>
+                and
+                <a href="https://www.ericchanlee.com">Eric Lee</a>
+            </p>
+        </div>
     </div>
 </main>
 
 <style>
+    main {
+        font-family: Arial, sans-serif;
+    }
+
     .disconnected {
         position: absolute;
         top: 0;
@@ -189,14 +210,74 @@
         width: 30vw;
         height: 100vh;
         background-color: #282c32;
-        border-right: 1px solid #ddd; /* Subtle border to separate sidebar */
-        box-shadow: 10px 0 5px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
+        border-right: 1px solid #ddd;
+        box-shadow: 10px 0 5px rgba(0, 0, 0, 0.2);
         display: flex;
         flex-direction: column;
-        overflow-y: auto; /* Ensure scrolling for overflow content */
-        font-family: 'Arial', sans-serif;
+        overflow-y: auto;
         font-size: 1rem;
         line-height: 1.5;
         color: pearl;
+    }
+
+    #logoContainer {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 0;
+        gap: 10px;
+    }
+
+    .logo-icon {
+        font-size: 2rem;
+        color: #007bff;
+        animation: bounce 2s infinite;
+    }
+
+    .logo-text {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #ddd;
+        margin: 0;
+        opacity: 0;
+        transform: translateX(-20px);
+        animation: slideIn 1s ease-out forwards;
+    }
+
+    @keyframes bounce {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    @keyframes slideIn {
+        0% {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    #footer {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        padding: 0 1rem;
+        color: #eee;
+    }
+
+    #footer a {
+        color: skyblue;
+        transition: color 0.3s ease;
     }
 </style>
