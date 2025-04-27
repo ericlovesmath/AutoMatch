@@ -21,9 +21,9 @@
 <main>
 <h2>Registration</h2>
 <p>Enter your information, and select your starting and ending locations!</p>
-<form onsubmit={submit_info}>
+<form onsubmit={submit_info} autocomplete="off">
     <input type="text" name="name" placeholder="Name" />
-    <input type="text" name="info" placeholder="Tell me about yourself..." />
+    <input type="text" name="info" placeholder="Useful info (# people, bags, etc.)" />
     <input type="submit" value="Submit" />
 </form>
 </main>

@@ -4,7 +4,7 @@ export interface Message {
 }
 
 export interface Response {
-  type: "notify_status" | "request_consent" | "notify_match_rejected" | "notify_chat_start" | "notify_chat_message" | "notify_map_update" ;
+  type: "notify_status" | "request_consent" | "notify_match_rejected" | "notify_paired" | "notify_chat_message" | "notify_map_update" ;
   msg: any;
 }
 
@@ -18,4 +18,11 @@ export interface ClientData {
   info: string;
   from: Region;
   to: Region;
+}
+
+export interface Path {
+    from_lat: number
+    from_lng: number
+    to_lat: number
+    to_lng: number
 }

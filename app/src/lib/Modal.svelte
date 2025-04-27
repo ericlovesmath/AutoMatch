@@ -3,14 +3,14 @@
 </script>
 
 <main>
-    <button class="info-button" on:click={() => (showInfo = !showInfo)}>
+    <button class="info-button" on:mouseenter={() => (showInfo = true)} on:mouseleave={() => (showInfo = false)}>
         About
     </button>
 
     {#if showInfo}
         <div class="info-window">
             <p>
-                Find people for rideshares!
+                AutoMatch creates carpools by allowing a range of starting/ending locations to be specified.  Whenever there are overlapping ranges, users are given the option to accept the match and share a ride with the other person. If they both choose to do this, a start/end location shared by both users is automatically chosen and a chat window is opened to allow for further communication. AutoMatch respects users' privacy by not revealing identities until there is a match, and by avoiding using exact starting/ending locations.
             </p>
         </div>
     {/if}

@@ -12,7 +12,11 @@
     import { onMount } from "svelte";
     import Matching from "./lib/Matching.svelte";
     import L from "leaflet";
-    import { type ClientData, type Response } from "../../shared/types";
+    import {
+        type ClientData,
+        type Path,
+        type Response,
+    } from "../../shared/types";
 
     type Phase = "info" | "matching" | "chat";
     let current_phase: Phase = "info";
@@ -23,7 +27,7 @@
     let waiting_for_other = false;
     let chat_started = false;
 
-    let map_component : Map;
+    let map_component: Map;
 
     // object mapping strings to LocationInfo
     let external_locs: any = [];
@@ -56,9 +60,9 @@
         // if we have all of the info and are still in
         // the info phase, register user
         if (current_phase == "info") {
-            map_component.get_map().fitBounds([
+            map_component.zoom_to_points([
                 [locs.from.lat, locs.from.lng],
-                [locs.to.lat, locs.to.lng]
+                [locs.to.lat, locs.to.lng],
             ]);
             submitUser(ws, locs, contact);
         }
@@ -117,16 +121,19 @@
                     break;
                 }
 
-                case "notify_chat_start":
+                case "notify_paired": {
+                    const data = res.msg as Path;
                     chat_started = true;
                     next_phase();
+                    map_component.show_final_path(data);
                     break;
+                }
 
                 case "notify_chat_message":
                     chat = [...chat, `${res.msg.name}: ${res.msg.msg}`];
                     break;
 
-                case "notify_map_update":
+                case "notify_map_update": {
                     let { type, data }: { type: string; data: ClientData } =
                         res.msg;
                     // Map Pretty Section
@@ -146,6 +153,7 @@
                         alert("unknown map_update action " + type);
                     }
                     break;
+                }
 
                 default:
                     console.error("Unknown response type:", res.type);
@@ -234,7 +242,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px 0;
+        padding: 50px 0;
         gap: 10px;
     }
 

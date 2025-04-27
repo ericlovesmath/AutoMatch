@@ -18,11 +18,11 @@
           <br><br>
           <strong>Name:</strong> {matched.name}
           <br>
-          <strong>Description:</strong> {matched.info}
+          <strong>Info:</strong> {matched.info}
       </p>
       <div class="button-group">
-        <button class="accept-btn" onclick={() => send_consent(true)}>Send Consent</button>
-        <button class="reject-btn" onclick={() => send_consent(false)}>Reject Consent</button>
+        <button class="accept-btn" onclick={() => send_consent(true)}>Accept</button>
+        <button class="reject-btn" onclick={() => send_consent(false)}>Reject</button>
       </div>
     {:else if matched && waiting_for_other}
       <p>Waiting for other user...</p>
