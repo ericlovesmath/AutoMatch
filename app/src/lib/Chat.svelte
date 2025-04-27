@@ -104,7 +104,7 @@ main {
 }
 
 #chatInput button:hover {
-  background-color: #0056b3;
+  background-color: var(--dark-blue);
 }
 
 /* Scrollbar styling, I have no idea how this works */

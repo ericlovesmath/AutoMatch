@@ -8,7 +8,7 @@
   type Selection = "from" | "to" | "none";
   type SubSelection = "marker" | "radius";
   let selection_mode: Selection = $state("from");
-  let subselection: SubSelection = "marker";
+  let subselection: SubSelection = $state("marker");
 
   let { update_loc, selecting_locations, external_selections } = $props<{
     update_loc: (l: LocationInfo) => void;
@@ -148,10 +148,13 @@
       onclick={activate_from}
       disabled={!selecting_locations}
     >
-      {#if selection_mode == "from"}
-        Click to select
+      {#if selection_mode == "from" && subselection == "marker"}
+        Click to select start location
+      {:else if selection_mode == "from" && subselection == "radius"}
+        Click again to set region size
+      {:else}
+        Start
       {/if}
-      Start
     </button>
     <button
       style:flex={selection_mode == "to" ? "3" : "1"}
@@ -159,10 +162,13 @@
       onclick={activate_to}
       disabled={!selecting_locations}
     >
-      {#if selection_mode == "to"}
-        Click to select
+      {#if selection_mode == "to" && subselection == "marker"}
+        Click to select destination
+      {:else if selection_mode == "to" && subselection == "radius"}
+        Click again to set region size
+      {:else}
+        Destination
       {/if}
-      Destination
     </button>
   </div>
 </main>

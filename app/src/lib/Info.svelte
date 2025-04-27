@@ -72,7 +72,7 @@ form input[type="text"] {
 form input[type="submit"] {
   width: 100%;
   padding: 10px;
-  background-color: #007BFF;
+  background-color: var(--blue);
   color: white;
   border: none;
   border-radius: 5px;
@@ -82,7 +82,7 @@ form input[type="submit"] {
 }
 
 form input[type="submit"]:hover {
-  background-color: #0056b3;
+  background-color: var(--dark-blue);
 }
 
 </style>
