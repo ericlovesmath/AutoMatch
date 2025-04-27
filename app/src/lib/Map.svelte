@@ -1,6 +1,8 @@
 <script lang="ts">
   import "leaflet/dist/leaflet.css";
   import L from "leaflet";
+  import "leaflet-control-geocoder";
+  import "leaflet-control-geocoder/dist/Control.Geocoder.css";
   import { onMount } from "svelte";
   import { type LocationInfo } from "./WebsocketStore";
 
@@ -37,6 +39,26 @@
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
+
+    L.Control.geocoder({
+          defaultMarkGeocode: false, // Prevent automatic marker placement
+          position: "bottomright",
+          collapsed: false,
+      }).on("markgeocode", (e: any) => {
+        const bbox = e.geocode.bbox;
+        const poly = L.polygon([
+          [bbox.getSouthEast().lat, bbox.getSouthEast().lng],
+          [bbox.getNorthEast().lat, bbox.getNorthEast().lng],
+          [bbox.getNorthWest().lat, bbox.getNorthWest().lng],
+          [bbox.getSouthWest().lat, bbox.getSouthWest().lng],
+        ]);
+        map.fitBounds(poly.getBounds()); // Zoom to the location
+      }).addTo(map);
+
+    // L.Control.geocoder({
+    //       defaultMarkGeocode: false, // Prevent automatic marker placement
+    //       position: "bottomright",
+    //   }).addTo(map);
 
     map.on("click", (e) => {
       const coord = e.latlng;
