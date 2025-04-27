@@ -210,6 +210,8 @@ wss.on("connection", (ws: WebSocket) => {
             if (client.match && !client.consent) {
                 const other = registered_clients.find((c) => c.ws === client?.match);
                 if (other) {
+                    // TODO: error here, it will reject and go back to the loading screen,
+                    // but it can never be re-matched since the match field is set
                     other.ws.send(mkResReject());
                 }
             }
