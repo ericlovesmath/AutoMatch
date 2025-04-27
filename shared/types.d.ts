@@ -15,6 +15,7 @@ interface Region {
 }
 export interface ClientData {
   name: string;
+  info: string;
   from: Region;
   to: Region;
 }

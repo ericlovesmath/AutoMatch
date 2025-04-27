@@ -26,3 +26,6 @@ npm run serve
 ## Not planned
 
 support for payment / booking ubers?
+
+- Calculate an actual location to go to
+- Accepting should be a waiting thing instead of just nothing popping up

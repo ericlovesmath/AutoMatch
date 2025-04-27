@@ -13,7 +13,7 @@
 
         update({
             name: e.target.name.value,
-            phone: e.target.phone.value,
+            info: e.target.info.value,
         });
     }
 </script>
@@ -23,7 +23,7 @@
 <p>Enter your information, and select your starting and ending locations!</p>
 <form onsubmit={submit_info}>
     <input type="text" name="name" placeholder="Name" />
-    <input type="text" name="phone" placeholder="Phone Number?" />
+    <input type="text" name="info" placeholder="Tell me about yourself..." />
     <input type="submit" value="Submit" />
 </form>
 </main>
