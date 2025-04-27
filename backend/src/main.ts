@@ -12,37 +12,65 @@ import { Message, ClientData, Response } from "../../shared/types";
 //   - Client can send info_update like register, but to change the user
 //   - ClientData doesn't take an Airport, but [from] and [to] regions
 
-const mkResStatus = (msg: string) => JSON.stringify({ type: "status", msg } as Response);
-const mkResConsent = (msg: ClientData) => JSON.stringify({ type: "consent", msg } as Response);
-const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg } as Response);
-const mkResChatMsg = (msg: { name: string, msg: string; }) => JSON.stringify({ type: "chat_message", msg } as Response);
-const mkResMapUpdate = (msg: { type: "add" | "remove", data: ClientData; }) => JSON.stringify({ type: "map_update", msg } as Response);
+const mkResStatus = (msg: string) => JSON.stringify({ type: "notify_status", msg } as Response);
+const mkResConsent = (msg: ClientData) => JSON.stringify({ type: "request_consent", msg } as Response);
+const mkResReject = () => JSON.stringify({ type: "notify_match_rejected", msg: "" } as Response);
+const mkResChat = (msg: string) => JSON.stringify({ type: "notify_chat_start", msg } as Response);
+const mkResChatMsg = (msg: { name: string, msg: string; }) => JSON.stringify({ type: "notify_chat_message", msg } as Response);
+const mkResMapUpdate = (msg: { type: "add" | "remove", data: ClientData; }) => JSON.stringify({ type: "notify_map_update", msg } as Response);
 
 // TODO: Database instead?
-const registered_clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: boolean; }[] = [];
+const registered_clients: { ws: WebSocket; data: ClientData; match?: WebSocket, consent?: boolean; blacklist: WebSocket[]; }[] = [];
 const all_clients: WebSocket[] = [];
 
 const wss = new WebSocketServer({ port: 8080 });
 
-function checkPair(ws: WebSocket) {
+function findMatch(ws: WebSocket) {
   const client1 = registered_clients.find((client) => client.ws === ws);
-
-  if (client1) {
-    for (const client2 of registered_clients) {
-      if (client1.ws !== client2.ws && isMatch(client1.data, client2.data)) {
-        console.log(`[PAIRING] Found match: ${client1.data.name}, ${client2.data.name}`);
-
-        client1.ws.send(mkResConsent(client2.data));
-        client2.ws.send(mkResConsent(client1.data));
-
-        client1.match = client2.ws;
-        client2.match = client1.ws;
-      }
-    }
-  } else {
+  if (!client1) {
     console.log(`[PAIRING] Failed to find user`);
     ws.send(mkResStatus("Update request failed, couldn't find user"));
+    return;
   }
+  if (client1.match) {
+    console.log(`[PAIRING] User already matched or waiting`);
+    ws.send(mkResStatus("Already matched or waiting"));
+    return;
+  }
+
+  for (const client2 of registered_clients) {
+    // client2 already waiting or matched
+    if (client2.match) {
+      continue;
+    }
+
+    // same client
+    if (client1.ws == client2.ws) {
+      continue;
+    }
+
+    // too far away
+    if (!isMatch(client1.data, client2.data)) {
+      continue;
+    }
+
+    // one client is blacklisted by the other
+    if (client1.blacklist.includes(client2.ws) || client2.blacklist.includes(client1.ws)) {
+      continue;
+    }
+
+    console.log(`[PAIRING] Found match: ${client1.data.name}, ${client2.data.name}`);
+
+    client1.ws.send(mkResConsent(client2.data));
+    client2.ws.send(mkResConsent(client1.data));
+
+    client1.match = client2.ws;
+    client2.match = client1.ws;
+    return;
+  }
+
+  console.log(`[PAIRING] No match found for ${client1.data.name}`);
+  ws.send(mkResStatus("No match found, wait for another user"));
 }
 
 wss.on("connection", (ws: WebSocket) => {
@@ -51,6 +79,9 @@ wss.on("connection", (ws: WebSocket) => {
   all_clients.push(ws);
 
   for (const client of registered_clients) {
+    if (client.match && client.consent) {
+      continue;
+    }
     console.log(`[MAP] Sent ${client.data.name} info to new connection`);
     ws.send(mkResMapUpdate({ type: "add", data: client.data }));
   }
@@ -69,7 +100,7 @@ wss.on("connection", (ws: WebSocket) => {
           const data = message.data as ClientData;
           console.log(`[REGISTER] Received Client Data: ${JSON.stringify(data)}`);
 
-          console.log(all_clients.length)
+          console.log(all_clients.length);
           for (const w of all_clients) {
             if (w !== ws) {
               console.log(`[MAP] Sent ${data.name} info to ${w}`);
@@ -77,10 +108,10 @@ wss.on("connection", (ws: WebSocket) => {
             }
           }
 
-          registered_clients.push({ ws, data });
+          registered_clients.push({ ws, data, blacklist: [] });
           ws.send(mkResStatus("Registration Successful"));
 
-          checkPair(ws);
+          findMatch(ws);
           break;
         }
 
@@ -92,26 +123,35 @@ wss.on("connection", (ws: WebSocket) => {
           console.log(`[CONSENT] Consent set: ${client?.data.name} to ${consented}`);
 
           if (client?.ws && consented) {
+            // client accepts the match
             client.consent = true;
             const other = registered_clients.find((c) => c.ws === client.match);
             if (other?.consent) {
               console.log(`[CONSENT] Pairing: ${client.data.name}, ${other.data.name}`);
               client.ws.send(mkResChat("Connecting..."));
               other.ws.send(mkResChat("Connecting..."));
+              all_clients.forEach(w => w.send(mkResMapUpdate({ type: "remove", data: other.data })));
+              all_clients.forEach(w => w.send(mkResMapUpdate({ type: "remove", data: client.data })));
             } else {
               client.ws.send(mkResStatus("Waiting for other user to consent"));
             }
           } else if (client?.ws && !consented) {
-            client.consent = false;
+            // client rejects the match
             const other = registered_clients.find((c) => c.ws === client.match);
+            client.consent = false;
+            client.match = undefined;
             if (other) {
-              console.log(`[CONSENT] Asked ${other.data.name} to remove ${client.data.name}`);
-              other.ws.send(mkResMapUpdate({ type: "remove", data: client.data }));
-              console.log(`[CONSENT] Asked ${client.data.name} to remove ${other.data.name}`);
-              client.ws.send(mkResMapUpdate({ type: "remove", data: other.data }));
-            } else {
-              client.ws.send(mkResStatus("Can't find opposing user to reject"));
+              client.blacklist.push(other.ws);
+              console.log(`[CONSENT] ${client.data.name} rejected ${other.data.name}`);
+              console.log("matching other person");
+              other.consent = false;
+              other.match = undefined;
+              other.ws.send(mkResReject()); // tell other person they were rejected
+              findMatch(other.ws); // rematch other person
             }
+            console.log("matching this client");
+            client.ws.send(mkResReject()); // tell this person the rejection went through
+            findMatch(client.ws); // rematch this person
           }
           break;
         }
@@ -159,7 +199,6 @@ wss.on("connection", (ws: WebSocket) => {
     if (ind_all !== -1) {
       all_clients.splice(ind_all, 1);
     }
-
     const ind_registered = registered_clients.findIndex(client => client.ws === ws);
     if (ind_registered !== -1) {
       const data = registered_clients[ind_registered].data;
@@ -167,7 +206,6 @@ wss.on("connection", (ws: WebSocket) => {
 
       registered_clients.splice(ind_registered, 1);
     }
-
     console.log("[DISCONNECTION] Client disconnected");
   });
 });

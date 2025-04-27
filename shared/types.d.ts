@@ -4,7 +4,7 @@ export interface Message {
 }
 
 export interface Response {
-  type: "status" | "consent" | "chat_start" | "chat_message" | "map_update" ;
+  type: "notify_status" | "request_consent" | "notify_match_rejected" | "notify_chat_start" | "notify_chat_message" | "notify_map_update" ;
   msg: any;
 }
 

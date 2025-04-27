@@ -12,7 +12,7 @@
     import { onMount } from "svelte";
     import Matching from "./lib/Matching.svelte";
     import L from "leaflet";
-    import { type ClientData } from "../../shared/types";
+    import { type ClientData, type Response } from "../../shared/types";
 
     type Phase = "info" | "matching" | "chat";
     let current_phase: Phase = "info";
@@ -20,6 +20,8 @@
     let locs: LocationInfo | null = null;
     let contact: ContactInfo | null = null;
     let match: ClientData | null = null;
+    let waiting_for_other = false;
+    let chat_started = false;
 
     // object mapping strings to LocationInfo
     let external_locs: any = [];
@@ -39,22 +41,29 @@
     }
 
     function next_phase() {
+        // get info if we don't have location
         if (locs === null) {
             current_phase = "info";
             return;
         }
+        // get info if we don't have contact info
         if (contact === null) {
             current_phase = "info";
             return;
         }
+        // if we have all of the info and are still in
+        // the info phase, register user
         if (current_phase == "info") {
             submitUser(ws, locs, contact);
         }
 
-        if (!match) {
+        // matching phase until chat starts
+        if (!chat_started) {
             current_phase = "matching";
             return;
         }
+
+        current_phase = "chat";
     }
 
     function send_msg(msg: string) {
@@ -63,14 +72,12 @@
 
     function send_consent(consent: boolean) {
         sendMessage(ws, "consent", consent);
+        waiting_for_other = true;
     }
 
     function set_matched(data: ClientData | null) {
         match = data;
-    }
-
-    function set_phase_chat() {
-        current_phase = "chat";
+        waiting_for_other = false;
     }
 
     let chat: string[] = [];
@@ -86,41 +93,36 @@
         };
 
         ws.onmessage = (e) => {
-            const res: { type: string; msg: any } = JSON.parse(e.data);
+            const res: Response = JSON.parse(e.data);
 
             switch (res.type) {
-                case "status":
+                case "notify_status":
                     // alert(res.msg);
                     break;
 
-                case "consent": {
+                case "request_consent": {
                     const data = res.msg as ClientData;
                     set_matched(data);
                     break;
                 }
 
-                case "chat_start":
-                    set_phase_chat();
+                case "notify_match_rejected": {
+                    set_matched(null);
+                    break;
+                }
+
+                case "notify_chat_start":
+                    chat_started = true;
+                    next_phase();
                     break;
 
-                case "chat_message":
+                case "notify_chat_message":
                     chat = [...chat, `${res.msg.name}: ${res.msg.msg}`];
                     break;
 
-                case "map_update":
+                case "notify_map_update":
                     let { type, data }: { type: string; data: ClientData } =
                         res.msg;
-                    console.log(res.msg);
-
-                    // Rejection Section
-                    if (
-                        current_phase == "matching" &&
-                        type == "remove" &&
-                        match?.name == data.name
-                    ) {
-                        set_matched(null);
-                    }
-
                     // Map Pretty Section
                     let { name, from, to } = data;
                     if (type == "add") {
@@ -174,7 +176,7 @@
         {#if current_phase == "info"}
             <Info update={update_info} />
         {:else if current_phase == "matching"}
-            <Matching matched={match} {send_consent} />
+            <Matching matched={match} {send_consent} {waiting_for_other} />
         {:else if current_phase == "chat"}
             <Chat {chat} send_message={send_msg} />
         {/if}

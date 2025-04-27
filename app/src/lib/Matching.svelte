@@ -1,8 +1,9 @@
 <script lang="ts">
     import type { ClientData } from "../../../shared/types";
 
-    let { matched, send_consent } = $props<{
+    let { matched, send_consent, waiting_for_other } = $props<{
         matched: ClientData | null;
+        waiting_for_other: boolean;
         send_consent: (consent: boolean) => void;
     }>();
 </script>
@@ -11,12 +12,15 @@
   <h2>Matching</h2>
 
   <div id="match-container">
-    {#if matched}
+    {#if matched && !waiting_for_other }
       <p>Found match!</p>
       <div class="button-group">
         <button class="accept-btn" onclick={() => send_consent(true)}>Send Consent</button>
         <button class="reject-btn" onclick={() => send_consent(false)}>Reject Consent</button>
       </div>
+    {:else if matched && waiting_for_other}
+      <p>Waiting for other user...</p>
+      <div class="loading-spinner"></div>
     {:else}
       <p>Looking for a match...</p>
       <div class="loading-spinner"></div>
