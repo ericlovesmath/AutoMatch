@@ -1,4 +1,5 @@
 
+// copied because of import behavior I can't figure out
 type MessageType = "register" | "consent" | "chat_message";
 type LocationInfo = {
     from: L.LatLng;

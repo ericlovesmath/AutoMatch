@@ -6,7 +6,7 @@
     import "leaflet-control-geocoder";
     import "leaflet-control-geocoder/dist/Control.Geocoder.css";
     import { onMount } from "svelte";
-    import { type LocationInfo } from "./websocket_utils";
+    import { type LocationInfo } from "./types";
     import type { Path } from "../../../shared/types";
 
     let map: L.Map;
