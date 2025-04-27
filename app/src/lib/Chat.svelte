@@ -10,6 +10,12 @@
         send_message(chatMessage.trim());
         chatMessage = "";
     }
+
+    function handleKeyDown(event: KeyboardEvent) {
+        if (event.key === "Enter") {
+            sendChatMessage();
+        }
+    }
 </script>
 
 <main>
@@ -25,6 +31,7 @@
                 type="text"
                 bind:value={chatMessage}
                 placeholder="Type your message..."
+                onkeydown={handleKeyDown}
             />
             <button onclick={sendChatMessage}>Send</button>
         </div>

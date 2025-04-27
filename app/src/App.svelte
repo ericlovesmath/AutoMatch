@@ -1,5 +1,6 @@
 <script lang="ts">
     import Map from "./lib/Map.svelte";
+    import Modal from "./lib/Modal.svelte";
     import Info from "./lib/Info.svelte";
     import Chat from "./lib/Chat.svelte";
     import {
@@ -156,9 +157,10 @@
         selecting_locations={current_phase == "info"}
         external_selections={external_locs}
     />
+    <Modal />
 
     <!-- sidebar -->
-    <div style="width: 30vw;">
+    <div class="sidebar" style="width: 30vw;">
         {#if current_phase == "info"}
             <Info update={update_info} />
         {:else if current_phase == "matching"}
@@ -178,5 +180,21 @@
         height: 100%;
         z-index: 4000;
         background-color: rgba(1, 1, 1, 0.3);
+    }
+
+    .sidebar {
+        padding: 1rem;
+        width: 30vw;
+        height: 100vh;
+        background-color: #282c32;
+        border-right: 1px solid #ddd; /* Subtle border to separate sidebar */
+        box-shadow: 10px 0 5px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto; /* Ensure scrolling for overflow content */
+        font-family: 'Arial', sans-serif;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: pearl;
     }
 </style>

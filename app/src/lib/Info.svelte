@@ -20,10 +20,10 @@
 
 <main>
 <h2>Info collect</h2>
-<p>Enter your information</p>
+<p>Enter your information, and select your starting and ending locations!</p>
 <form onsubmit={submit_info}>
-    <input type="text" name="name" placeholder="Zack Huang" />
-    <input type="text" name="phone" placeholder="(383) 783-9827" />
+    <input type="text" name="name" placeholder="Name" />
+    <input type="text" name="phone" placeholder="Phone Number?" />
     <input type="submit" value="Submit" />
 </form>
 </main>
