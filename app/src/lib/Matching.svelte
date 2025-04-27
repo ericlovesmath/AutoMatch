@@ -1,6 +1,8 @@
 <script lang="ts">
+    import type { ClientData } from "../../../shared/types";
+
     let { matched, send_consent } = $props<{
-        matched: boolean;
+        matched: ClientData | null;
         send_consent: (consent: boolean) => void;
     }>();
 </script>

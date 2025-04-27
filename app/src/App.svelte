@@ -18,7 +18,7 @@
 
     let locs: LocationInfo | null = null;
     let contact: ContactInfo | null = null;
-    let match = false;
+    let match: ClientData | null = null;
 
     // object mapping strings to LocationInfo
     let external_locs: any = [];
@@ -64,8 +64,8 @@
         sendMessage(ws, "consent", consent);
     }
 
-    function set_matched() {
-        match = true;
+    function set_matched(data: ClientData | null) {
+        match = data;
     }
 
     function set_phase_chat() {
@@ -92,9 +92,11 @@
                     // alert(res.msg);
                     break;
 
-                case "consent":
-                    set_matched();
+                case "consent": {
+                    const data = res.msg as ClientData;
+                    set_matched(data);
                     break;
+                }
 
                 case "chat_start":
                     set_phase_chat();
@@ -108,6 +110,13 @@
                     let { type, data }: { type: string; data: ClientData } =
                         res.msg;
                     console.log(res.msg);
+
+                    // Rejection Section
+                    if (current_phase == "matching" && type == "remove" && match?.name == data.name) {
+                        set_matched(null);
+                    }
+
+                    // Map Pretty Section
                     let { name, from, to } = data;
                     if (type == "add") {
                         external_locs[name] = {

@@ -13,7 +13,7 @@ import { Message, ClientData, Response } from "../../shared/types";
 //   - ClientData doesn't take an Airport, but [from] and [to] regions
 
 const mkResStatus = (msg: string) => JSON.stringify({ type: "status", msg } as Response);
-const mkResConsent = (msg: string) => JSON.stringify({ type: "consent", msg } as Response);
+const mkResConsent = (msg: ClientData) => JSON.stringify({ type: "consent", msg } as Response);
 const mkResChat = (msg: string) => JSON.stringify({ type: "chat_start", msg } as Response);
 const mkResChatMsg = (msg: { name: string, msg: string; }) => JSON.stringify({ type: "chat_message", msg } as Response);
 const mkResMapUpdate = (msg: { type: "add" | "remove", data: ClientData; }) => JSON.stringify({ type: "map_update", msg } as Response);
@@ -31,8 +31,8 @@ function checkPair(ws: WebSocket) {
       if (client1.ws !== client2.ws && isMatch(client1.data, client2.data)) {
         console.log(`[PAIRING] Found match: ${client1.data.name}, ${client2.data.name}`);
 
-        client1.ws.send(mkResConsent(`Found match: ${client2.data.name}`));
-        client2.ws.send(mkResConsent(`Found match: ${client1.data.name}`));
+        client1.ws.send(mkResConsent(client2.data));
+        client2.ws.send(mkResConsent(client1.data));
 
         client1.match = client2.ws;
         client2.match = client1.ws;
@@ -81,7 +81,7 @@ wss.on("connection", (ws: WebSocket) => {
 
           const client = clients.find((client) => client.ws === ws);
 
-          console.log(`[CONSENT] Received consent from: ${client?.data.name}`);
+          console.log(`[CONSENT] Consent set: ${client?.data.name} to ${consented}`);
 
           if (client?.ws && consented) {
             client.consent = true;
@@ -96,7 +96,7 @@ wss.on("connection", (ws: WebSocket) => {
           } else if (client?.ws && !consented) {
             client.consent = false;
             const other = clients.find((c) => c.ws === client.match);
-            if (other?.consent) {
+            if (other) {
               console.log(`[CONSENT] Asked ${other.data.name} to remove ${client.data.name}`);
               other.ws.send(mkResMapUpdate({ type: "remove", data: client.data }));
               console.log(`[CONSENT] Asked ${client.data.name} to remove ${other.data.name}`);
