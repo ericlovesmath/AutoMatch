@@ -13,8 +13,8 @@
     import L from "leaflet";
     import { type ClientData } from "../../shared/types";
 
-    type Phase = "location" | "info" | "matching" | "chat";
-    let current_phase: Phase = "location";
+    type Phase = "info" | "matching" | "chat";
+    let current_phase: Phase = "info";
 
     let locs: LocationInfo | null = null;
     let contact: ContactInfo | null = null;
