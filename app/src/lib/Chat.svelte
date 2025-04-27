@@ -16,7 +16,7 @@
     <div id="chatContainer">
         <h2>Chat</h2>
         <div id="chatMessages">
-            {#each $chat as msg}
+            {#each chat as msg}
                 <div>{msg}</div>
             {/each}
         </div>

@@ -5,7 +5,6 @@
     import {
         type LocationInfo,
         type ContactInfo,
-        type MessageType,
         sendMessage,
         submitUser,
     } from "./lib/WebsocketStore";
@@ -14,21 +13,15 @@
     import L from "leaflet";
     import { type ClientData } from "../../shared/types";
 
-    type MatchInfo = string;
-
-    type Phase = "info" | "matching" | "chat";
-    let current_phase: Phase = "info";
+    type Phase = "location" | "info" | "matching" | "chat";
+    let current_phase: Phase = "location";
 
     let locs: LocationInfo | null = null;
     let contact: ContactInfo | null = null;
-    let match: MatchInfo | null = null;
+    let match = false;
 
     // object mapping strings to LocationInfo
     let external_locs: any = [];
-
-    function handleConsent() {
-        sendMessage(ws, "consent", true as any);
-    }
 
     function update_loc(l: LocationInfo | null) {
         locs = l;
@@ -53,19 +46,30 @@
             current_phase = "info";
             return;
         }
-        submitUser(ws, locs, contact);
-        handleConsent();
+        if (current_phase == "info") {
+            submitUser(ws, locs, contact);
+        }
 
-        if (match === null) {
+        if (!match) {
             current_phase = "matching";
             return;
         }
-
-        current_phase = "chat";
     }
 
     function send_msg(msg: string) {
         sendMessage(ws, "chat_message", msg);
+    }
+
+    function send_consent(consent: boolean) {
+        sendMessage(ws, "consent", consent);
+    }
+
+    function set_matched() {
+        match = true;
+    }
+
+    function set_phase_chat() {
+        current_phase = "chat";
     }
 
     let chat: string[] = [];
@@ -89,17 +93,15 @@
                     break;
 
                 case "consent":
-                    // alert(res.msg);
+                    set_matched();
                     break;
 
                 case "chat_start":
-                    // alert("TODO: RELEASE CHAT INTERFACE HERE");
-                    // releaseChatInterface();
+                    set_phase_chat();
                     break;
 
                 case "chat_message":
-                    // alert("TODO: UPDATE CHAT INTERFACE HERE");
-                    chat.push(res.msg);
+                    chat = [...chat, `${res.msg.name}: ${res.msg.msg}`];
                     break;
 
                 case "map_update":
@@ -151,7 +153,7 @@
         {#if current_phase == "info"}
             <Info update={update_info} />
         {:else if current_phase == "matching"}
-            <Matching />
+            <Matching matched={match} send_consent={send_consent} />
         {:else if current_phase == "chat"}
             <Chat {chat} send_message={send_msg} />
         {/if}
